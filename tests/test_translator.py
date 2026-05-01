@@ -218,6 +218,17 @@ class TestHTMLExtractor:
             "<html><body>    hello!    </body></html>"
         )
 
+    def test_split_tokens(self):
+        # Ensure that reset() at the start of transform() doesn't break
+        # the ability to parse tags split across multiple tokens in a single stream.
+        trans = HTMLExtractorTransform()
+        output = trans.transform(self.vartok, [Token("<b"), Token(">Foo</b>")])
+        assert output == [
+            Token("<b>", "html", False),
+            Token("Foo", "text", True),
+            Token("</b>", "html", False),
+        ]
+
 
 class TestXXXTransform(TransformTestCase):
     @pytest.mark.parametrize(

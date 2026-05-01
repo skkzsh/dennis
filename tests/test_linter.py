@@ -767,6 +767,29 @@ class TestMismatchedHTMLLintRule(LintRuleTestCase):
         msgs = list(self.lintrule.lint(self.vartok, linted_entry))
         assert len(msgs) == 0
 
+    def test_leakage_and_edge_cases(self):
+        # 1. Check leakage between entries
+        # Entry 1 has an unclosed tag, Entry 2 is normal text.
+        po = polib.pofile(build_po_string(
+            'msgid "Unclosed <script>"\n' 'msgstr "Unclosed <script>"\n\n'
+            'msgid "Normal text"\n' 'msgstr "Normal text"\n'
+        ))
+
+        # Test first entry
+        linted_entry1 = LintedEntry(po[0])
+        msgs1 = list(self.lintrule.lint(self.vartok, linted_entry1))
+        assert len(msgs1) == 0
+
+        # Test second entry (should not be affected by the unclosed script tag above)
+        linted_entry2 = LintedEntry(po[1])
+        msgs2 = list(self.lintrule.lint(self.vartok, linted_entry2))
+        assert len(msgs2) == 0
+
+        # 2. Edge case: empty msgstr
+        linted_entry3 = build_linted_entry('msgid "<title>"\n' 'msgstr ""\n')
+        # Should not raise any exception
+        self.lintrule.lint(self.vartok, linted_entry3)
+
 
 class TLRTestCase:
     vartok = VariableTokenizer(["python-format", "python-brace-format"])
