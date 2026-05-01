@@ -593,7 +593,13 @@ class HTMLExtractorTransform(HTMLParser, Transform):
         self.new_tokens = []
         self.immutable_data_section = None
 
+    def reset(self):
+        HTMLParser.reset(self)
+        self.new_tokens = []
+        self.immutable_data_section = None
+
     def transform(self, vartok, token_stream):
+        self.reset()
         out = []
 
         for token in token_stream:
