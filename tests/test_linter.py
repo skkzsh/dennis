@@ -816,10 +816,13 @@ class TestOneCharNamesTLR(TLRTestCase):
         )
 
         msgs = list(self.lintrule.lint(self.vartok, linted_entry))
-        assert len(msgs) == 0
-        # assert msgs[0].kind == "warn"
-        # assert msgs[0].code == "W501"
-        # assert msgs[0].msg == "unnamed variable"
+        assert len(msgs) == 2
+        assert msgs[0].kind == "warn"
+        assert msgs[0].code == "W501"
+        assert msgs[0].msg == "unnamed variable"
+        assert msgs[1].kind == "warn"
+        assert msgs[1].code == "W501"
+        assert msgs[1].msg == "unnamed variable"
 
     def test_one_character_names(self):
         linted_entry = build_linted_entry(

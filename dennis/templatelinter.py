@@ -85,7 +85,18 @@ class OneCharNamesTLR(TemplateLintRule):
             ]
 
             for token in msgid_tokens:
-                if len(token) == 1 and token.isalpha():
+                if len(token) == 0:
+                    yield (
+                        LintMessage(
+                            WARNING,
+                            linted_entry.poentry.linenum,
+                            0,
+                            self.num,
+                            'unnamed variable',
+                            linted_entry.poentry,
+                        )
+                    )
+                elif len(token) == 1 and token.isalpha():
                     yield (
                         LintMessage(
                             WARNING,
