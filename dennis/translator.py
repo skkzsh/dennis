@@ -594,6 +594,8 @@ class HTMLExtractorTransform(HTMLParser, Transform):
         self.immutable_data_section = None
 
     def transform(self, vartok, token_stream):
+        self.reset()
+        self.immutable_data_section = None
         out = []
 
         for token in token_stream:
