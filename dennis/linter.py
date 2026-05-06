@@ -1,5 +1,4 @@
 import re
-import uuid
 from collections import namedtuple
 from dataclasses import dataclass
 from functools import cached_property
@@ -157,6 +156,9 @@ class MalformedMissingRightBraceLintRule(LintRule):
     name = "missingrightbrace"
     desc = "{foo with missing }"
 
+    DOUBLE_OPEN = "__DENNIS_DOUBLE_OPEN_BRACE__"
+    DOUBLE_CLOSE = "__DENNIS_DOUBLE_CLOSE_BRACE__"
+
     def lint(self, vartok, linted_entry):
         msgs = []
 
@@ -165,23 +167,21 @@ class MalformedMissingRightBraceLintRule(LintRule):
             return ()
 
         malformed_re = re.compile(r"(?:\{[^\}]+(?:\{|$))")
-        double_open = str(uuid.uuid4())
-        double_close = str(uuid.uuid4())
 
         for trstr in linted_entry.strs:
             if not trstr.msgstr_string:
                 continue
 
             malformed = malformed_re.findall(
-                trstr.msgstr_string.replace("{{", double_open).replace(
-                    "}}", double_close
+                trstr.msgstr_string.replace("{{", self.DOUBLE_OPEN).replace(
+                    "}}", self.DOUBLE_CLOSE
                 )
             )
             if not malformed:
                 continue
 
             malformed = [
-                item.strip().replace(double_open, "{{").replace(double_close, "}}")
+                item.strip().replace(self.DOUBLE_OPEN, "{{").replace(self.DOUBLE_CLOSE, "}}")
                 for item in malformed
             ]
             msgs.append(
@@ -203,6 +203,9 @@ class MalformedMissingLeftBraceLintRule(LintRule):
     name = "missingleftbrace"
     desc = "foo} with missing {"
 
+    DOUBLE_OPEN = "__DENNIS_DOUBLE_OPEN_BRACE__"
+    DOUBLE_CLOSE = "__DENNIS_DOUBLE_CLOSE_BRACE__"
+
     def lint(self, vartok, linted_entry):
         msgs = []
 
@@ -211,23 +214,21 @@ class MalformedMissingLeftBraceLintRule(LintRule):
             return ()
 
         malformed_re = re.compile(r"(?:(?:^|\})[^\{]*\})")
-        double_open = str(uuid.uuid4())
-        double_close = str(uuid.uuid4())
 
         for trstr in linted_entry.strs:
             if not trstr.msgstr_string:
                 continue
 
             malformed = malformed_re.findall(
-                trstr.msgstr_string.replace("{{", double_open).replace(
-                    "}}", double_close
+                trstr.msgstr_string.replace("{{", self.DOUBLE_OPEN).replace(
+                    "}}", self.DOUBLE_CLOSE
                 )
             )
             if not malformed:
                 continue
 
             malformed = [
-                item.strip().replace(double_open, "{{").replace(double_close, "}}")
+                item.strip().replace(self.DOUBLE_OPEN, "{{").replace(self.DOUBLE_CLOSE, "}}")
                 for item in malformed
             ]
             msgs.append(
