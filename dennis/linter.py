@@ -418,6 +418,9 @@ class MismatchedHTMLLintRule(LintRule):
             :raises HTMLParseError: If it's invalid HTML.
 
             """
+            if "<" not in text:
+                return []
+
             html = HTMLExtractorTransform()
             tokens = [
                 token
