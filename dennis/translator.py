@@ -580,8 +580,10 @@ class PirateTransform(Transform):
         return "".join(out)
 
 
+_COLLAPSE_WS_RE = re.compile(r"\s+", re.UNICODE)
+
 def collapse_whitespace(text):
-    return re.compile(r"\s+", re.UNICODE).sub(" ", text).strip()
+    return _COLLAPSE_WS_RE.sub(" ", text).strip()
 
 
 class HTMLExtractorTransform(HTMLParser, Transform):
