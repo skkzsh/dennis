@@ -10,6 +10,7 @@ class Format:
     name = ""
     desc = ""
     regexp = ""
+    compiled_regexp = None
 
     identifier = None
 
@@ -28,6 +29,7 @@ class PythonBraceFormat(Format):
         # {}, {0}, {foo}, {foo:bar}, {foo:bar baz}
         r"(?:\{[^\}]*?\})"
     )
+    compiled_regexp = re.compile(regexp)
 
     identifier = re.compile(r"\{([^!:\}]*)")
 
@@ -51,6 +53,7 @@ class PythonFormat(Format):
         # aren't getting used in gettext contexts anyhow.
         r"(?:%(?:[(]\S+?[)])?[#0+-]?[\.\d\*]*[hlL]?[diouxefGgcrs])"
     )
+    compiled_regexp = re.compile(regexp)
 
     identifier = re.compile(
         r"%" r"(?:" + r"\((\S+?)\)" + r")?" r"[#0+-]?[\.\d\*]*[hlL]?[diouxefGgcrs]"
@@ -154,7 +157,7 @@ class VariableTokenizer:
 
     def extract_variable_name(self, text):
         for fmt in self.formats:
-            if re.match(fmt.regexp, text):
+            if fmt.compiled_regexp.match(text):
                 return fmt.extract_variable_name(text)
 
 
