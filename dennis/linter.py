@@ -404,15 +404,10 @@ class MismatchedHTMLLintRule(LintRule):
     name = "html"
     desc = "Checks for matching html between source and translated strings"
 
-    def __init__(self):
-        from dennis.translator import HTMLExtractorTransform
-        super().__init__()
-        self._html_extractor = HTMLExtractorTransform()
-
     def lint(self, vartok, linted_entry):
         msgs = []
 
-        from dennis.translator import Token
+        from dennis.translator import HTMLExtractorTransform, Token
 
         def equiv(left, right):
             return left == right
@@ -423,9 +418,10 @@ class MismatchedHTMLLintRule(LintRule):
             :raises HTMLParseError: If it's invalid HTML.
 
             """
+            html = HTMLExtractorTransform()
             tokens = [
                 token
-                for token in self._html_extractor.transform(vartok, [Token(text)])
+                for token in html.transform(vartok, [Token(text)])
                 if token.type == "html" and not token.s.startswith("&")
             ]
             return sorted(tokens, key=lambda token: token.s)
