@@ -1,5 +1,6 @@
 import re
 import string
+from dataclasses import dataclass
 
 import click
 from html.parser import HTMLParser
@@ -15,29 +16,23 @@ def debug(*args):
         click.echo(" ".join([str(arg) for arg in args]))
 
 
+@dataclass(frozen=True)
 class Token:
-    def __init__(self, s, type="text", mutable=True):
-        if not isinstance(s, str):
-            s = s.decode("utf-8")
-        self.s = s
-        self.type = type
-        self.mutable = mutable
+    s: str
+    type: str = "text"
+    mutable: bool = True
+
+    def __post_init__(self):
+        if not isinstance(self.s, str):
+            # We can't use self.s = ... in a frozen dataclass __post_init__ directly
+            # but we can use object.__setattr__
+            object.__setattr__(self, "s", self.s.decode("utf-8"))
 
     def __str__(self):
         return self.s
 
     def __repr__(self):
         return "<{} {}>".format(self.type, repr(self.s))
-
-    def __eq__(self, token):
-        return (
-            self.s == token.s
-            and self.mutable == token.mutable
-            and self.type == token.type
-        )
-
-    def __ne__(self, token):
-        return not self.__eq__(token)
 
 
 class Transform:
@@ -63,7 +58,7 @@ class EmptyTransform(Transform):
     desc = "Returns empty strings."
 
     def transform(self, vartok, token_stream):
-        return [Token("")]
+        return (Token(""),)
 
 
 class DoubleTransform(Transform):
@@ -83,7 +78,7 @@ class DoubleTransform(Transform):
 
             new_tokens.append(Token("".join(s)))
 
-        return new_tokens
+        return tuple(new_tokens)
 
 
 class XXXTransform(Transform):
@@ -106,7 +101,7 @@ class XXXTransform(Transform):
 
             new_tokens.append(Token("".join(new_s)))
 
-        return new_tokens
+        return tuple(new_tokens)
 
     def split_ending(self, s):
         ending = []
@@ -155,7 +150,7 @@ class HahaTransform(Transform):
 
             new_tokens.append(Token("".join(new_s)))
 
-        return new_tokens
+        return tuple(new_tokens)
 
     def split_ending(self, s):
         ending = []
@@ -184,7 +179,7 @@ class AngleQuoteTransform(XXXTransform):
             s = "\u00ab" + s + "\u00bb" + ending
             new_tokens.append(Token(s))
 
-        return new_tokens
+        return tuple(new_tokens)
 
 
 class ShoutyTransform(Transform):
@@ -200,7 +195,7 @@ class ShoutyTransform(Transform):
 
             new_tokens.append(Token(token.s.upper()))
 
-        return new_tokens
+        return tuple(new_tokens)
 
 
 class ReverseTransform(Transform):
@@ -216,7 +211,7 @@ class ReverseTransform(Transform):
 
             new_tokens.append(Token(token.s[::-1]))
 
-        return new_tokens
+        return tuple(new_tokens)
 
 
 class DubstepTransform(Transform):
@@ -277,7 +272,7 @@ class DubstepTransform(Transform):
 
             new_tokens.append(Token(new_string))
 
-        return new_tokens
+        return tuple(new_tokens)
 
 
 class ZombieTransform(Transform):
@@ -352,7 +347,7 @@ class ZombieTransform(Transform):
                 new_string = new_string.strip()
             new_tokens.append(Token(new_string))
 
-        return new_tokens
+        return tuple(new_tokens)
 
 
 class RedactedTransform(Transform):
@@ -372,7 +367,7 @@ class RedactedTransform(Transform):
             new_s = [redact_map.get(c, c) for c in token.s]
             new_tokens.append(Token("".join(new_s)))
 
-        return new_tokens
+        return tuple(new_tokens)
 
 
 class PirateTransform(Transform):
@@ -410,7 +405,7 @@ class PirateTransform(Transform):
 
             new_tokens.append(Token(out))
 
-        return new_tokens
+        return tuple(new_tokens)
 
     COLOR = [
         "arr!",
