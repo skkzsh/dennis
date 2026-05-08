@@ -410,20 +410,10 @@ class MismatchedHTMLLintRule(LintRule):
         # Fast path: if there is no < in any of the strings, then there is no
         # HTML to check. This saves us from importing and defining functions
         # for every entry.
-        has_html = False
-        for trstr in linted_entry.strs:
-            if not trstr.msgstr_string:
-                continue
-            if "<" in trstr.msgstr_string:
-                has_html = True
-                break
-            for s in trstr.msgid_strings:
-                if "<" in s:
-                    has_html = True
-                    break
-            if has_html:
-                break
-
+        has_html = any(
+            ("<" in tr.msgstr_string) or any("<" in s for s in tr.msgid_strings)
+            for tr in linted_entry.strs if tr.msgstr_string
+        )
         if not has_html:
             return msgs
 
