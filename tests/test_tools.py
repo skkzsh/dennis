@@ -90,3 +90,62 @@ def test_pythonformat(text, expected):
 )
 def test_parse_dennis_note(text, expected):
     assert parse_dennis_note(text) == expected
+
+
+class TestVariableTokenizerCache:
+    def test_extract_tokens_cache(self):
+        vartok = VariableTokenizer(["python-format"])
+        text = "Hello %s"
+
+        vartok.extract_tokens.cache_clear()
+
+        # Miss
+        vartok.extract_tokens(text)
+        assert vartok.extract_tokens.cache_info().misses == 1
+        assert vartok.extract_tokens.cache_info().hits == 0
+
+        # Hit
+        vartok.extract_tokens(text)
+        assert vartok.extract_tokens.cache_info().misses == 1
+        assert vartok.extract_tokens.cache_info().hits == 1
+
+        # Miss with different unique param
+        vartok.extract_tokens(text, unique=False)
+        assert vartok.extract_tokens.cache_info().misses == 2
+        assert vartok.extract_tokens.cache_info().hits == 1
+
+    def test_extract_variable_name_cache(self):
+        vartok = VariableTokenizer(["python-format", "python-brace-format"])
+
+        vartok.extract_variable_name.cache_clear()
+
+        # Miss
+        vartok.extract_variable_name("%(name)s")
+        assert vartok.extract_variable_name.cache_info().misses == 1
+        assert vartok.extract_variable_name.cache_info().hits == 0
+
+        # Hit
+        vartok.extract_variable_name("%(name)s")
+        assert vartok.extract_variable_name.cache_info().misses == 1
+        assert vartok.extract_variable_name.cache_info().hits == 1
+
+        # Miss with different format
+        vartok.extract_variable_name("{name}")
+        assert vartok.extract_variable_name.cache_info().misses == 2
+        assert vartok.extract_variable_name.cache_info().hits == 1
+
+    def test_cache_instance_separation(self):
+        vartok1 = VariableTokenizer(["python-format"])
+        vartok2 = VariableTokenizer(["python-format"])
+        text = "Hello %s"
+
+        vartok1.extract_tokens.cache_clear()
+
+        vartok1.extract_tokens(text)
+        assert vartok1.extract_tokens.cache_info().misses == 1
+        assert vartok1.extract_tokens.cache_info().hits == 0
+
+        # Different instance should be a miss (self is part of key)
+        vartok2.extract_tokens(text)
+        assert vartok2.extract_tokens.cache_info().misses == 2
+        assert vartok2.extract_tokens.cache_info().hits == 0
