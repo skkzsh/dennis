@@ -95,6 +95,7 @@ class VariableTokenizer:
         if not formats:
             self.formats = []
             self.vars_re = None
+            self.format_names = set()
 
         else:
             # Convert names to classes
@@ -110,10 +111,11 @@ class VariableTokenizer:
             self.vars_re = re.compile(
                 r"(" + "|".join([vt.regexp for vt in self.formats]) + r")"
             )
+            self.format_names = {tok.name for tok in self.formats}
 
     def contains(self, fmt):
         """Does this tokenizer contain specified variable format?"""
-        return fmt in [tok.name for tok in self.formats]
+        return fmt in self.format_names
 
     def tokenize(self, text):
         """Breaks s into strings and Python variables
