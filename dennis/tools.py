@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 import re
 
 import click
@@ -74,41 +75,44 @@ class UnknownFormat(Exception):
     pass
 
 
+@dataclass(frozen=True)
 class VariableTokenizer:
-    def __init__(self, formats=None):
-        """
-        :arg formats: List of variable formats
+    formats: tuple = field(default=None)
+    vars_re: object = field(init=False, default=None)
 
-            If None, creates a VariableTokenizer that tokenizes on all
-            formats of variables. Otherwise just recognizes the listed
-            formats.
-
-        """
+    def __post_init__(self):
         all_formats = get_available_formats()
+        formats = self.formats
 
         if formats is None:
-            formats = all_formats.keys()
+            formats = tuple(all_formats.keys())
 
-        formats = [fmt for fmt in formats if fmt]
+        formats = tuple(fmt for fmt in formats if fmt)
 
         # If they don't want variable tokenizing at all
         if not formats:
-            self.formats = []
-            self.vars_re = None
+            object.__setattr__(self, "formats", ())
+            object.__setattr__(self, "vars_re", None)
 
         else:
             # Convert names to classes
-            self.formats = []
+            format_classes = []
 
             for fmt in formats:
                 try:
-                    self.formats.append(all_formats[fmt])
+                    format_classes.append(all_formats[fmt])
                 except KeyError:
                     raise UnknownFormat("{} is not a known variable format".format(fmt))
 
+            object.__setattr__(self, "formats", tuple(format_classes))
+
             # Generate variable regexp
-            self.vars_re = re.compile(
-                r"(" + "|".join([vt.regexp for vt in self.formats]) + r")"
+            object.__setattr__(
+                self,
+                "vars_re",
+                re.compile(
+                    r"(" + "|".join([vt.regexp for vt in format_classes]) + r")"
+                ),
             )
 
     def contains(self, fmt):
@@ -122,25 +126,30 @@ class VariableTokenizer:
 
         :arg text: the string to tokenize
 
-        :returns: list of tokens---every even one is a Python variable
+        :returns: tuple of tokens---every even one is a Python variable
 
         """
         if not self.vars_re:
-            return [text]
-        return [token for token in self.vars_re.split(text) if token]
+            return (text,)
+        return tuple(token for token in self.vars_re.split(text) if token)
 
     def extract_tokens(self, text, unique=True):
         """Returns the set of variable in the text"""
         if not self.vars_re:
-            return set()
+            if unique:
+                return frozenset()
+            return ()
 
         try:
             tokens = self.vars_re.findall(text)
             if unique:
-                tokens = set(tokens)
-            return tokens
+                return frozenset(tokens)
+            return tuple(tokens)
         except TypeError:
             click.echo("TYPEERROR: {}".format(repr(text)))
+            if unique:
+                return frozenset()
+            return ()
 
     def is_token(self, text):
         """Is this text a variable?"""
@@ -170,17 +179,17 @@ DENNIS_NOTE_RE = re.compile(r"dennis-ignore:\s+(\*|[EW0-9,]+)")
 def parse_dennis_note(text):
     """Parses a dennis note and returns list of rules to skip"""
     if not text:
-        return []
+        return ()
 
     match = DENNIS_NOTE_RE.search(text)
     if not match:
-        return []
+        return ()
 
     match = match.group(1).strip()
     if match == "*":
         return "*"
 
-    return [item for item in match.split(",") if item]
+    return tuple(item for item in match.split(",") if item)
 
 
 def parse_pofile(fn_or_string):
