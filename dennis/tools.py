@@ -1,4 +1,3 @@
-from functools import lru_cache
 import re
 
 import click
@@ -130,7 +129,6 @@ class VariableTokenizer:
             return [text]
         return [token for token in self.vars_re.split(text) if token]
 
-    @lru_cache(maxsize=1000)
     def extract_tokens(self, text, unique=True):
         """Returns the set of variable in the text"""
         if not self.vars_re:
@@ -150,7 +148,6 @@ class VariableTokenizer:
             return False
         return self.vars_re.match(text) is not None
 
-    @lru_cache(maxsize=1000)
     def extract_variable_name(self, text):
         for fmt in self.formats:
             if re.match(fmt.regexp, text):
