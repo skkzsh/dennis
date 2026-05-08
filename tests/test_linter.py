@@ -153,14 +153,18 @@ class TestMalformedNoTypeLintRule(LintRuleTestCase):
         linted_entry = build_linted_entry(
             "#: foo/foo.py:5\n" 'msgid "Foo"\n' 'msgstr "Oof"\n'
         )
-
         msgs = self.lintrule.lint(self.vartok, linted_entry)
-        assert len(msgs) == 0
+        assert msgs == []
 
         linted_entry = build_linted_entry(
             "#: foo/foo.py:5\n" 'msgid "Foo: {foo}"\n' 'msgstr "Oof: {foo}"\n'
         )
+        msgs = self.lintrule.lint(self.vartok, linted_entry)
+        assert msgs == []
 
+        linted_entry = build_linted_entry(
+            "#: foo/foo.py:5\n" 'msgid "Foo: %s"\n' 'msgstr "Oof: %s"\n'
+        )
         msgs = self.lintrule.lint(self.vartok, linted_entry)
         assert msgs == ()
 
@@ -231,6 +235,16 @@ class TestMalformedNoTypeLintRule(LintRuleTestCase):
 
 class TestMalformedMissingRightBraceLintRule(LintRuleTestCase):
     lintrule = MalformedMissingRightBraceLintRule()
+
+    def test_fine(self):
+        linted_entry = build_linted_entry('msgid "Foo {foo}"\nmsgstr "Oof {foo}"\n')
+        msgs = self.lintrule.lint(self.vartok, linted_entry)
+        assert msgs == []
+
+        # No { character in msgstr - fast path
+        linted_entry = build_linted_entry('msgid "Foo {foo}"\nmsgstr "Oof foo}"\n')
+        msgs = self.lintrule.lint(self.vartok, linted_entry)
+        assert msgs == []
 
     def test_python_var_missing_right_curly_brace(self):
         linted_entry = build_linted_entry(
@@ -310,6 +324,16 @@ class TestMalformedMissingRightBraceLintRule(LintRuleTestCase):
 
 class TestMalformedMissingLeftBraceLintRuleTest(LintRuleTestCase):
     lintrule = MalformedMissingLeftBraceLintRule()
+
+    def test_fine(self):
+        linted_entry = build_linted_entry('msgid "Foo {foo}"\nmsgstr "Oof {foo}"\n')
+        msgs = self.lintrule.lint(self.vartok, linted_entry)
+        assert msgs == []
+
+        # No } character in msgstr - fast path
+        linted_entry = build_linted_entry('msgid "Foo {foo}"\nmsgstr "Oof {foo"\n')
+        msgs = self.lintrule.lint(self.vartok, linted_entry)
+        assert msgs == []
 
     def test_python_var_missing_left_curly_brace(self):
         linted_entry = build_linted_entry(
