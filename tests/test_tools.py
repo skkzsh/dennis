@@ -90,3 +90,26 @@ def test_pythonformat(text, expected):
 )
 def test_parse_dennis_note(text, expected):
     assert parse_dennis_note(text) == expected
+
+
+def test_extract_tokens_unique():
+    vartok = VariableTokenizer(["python-format", "python-brace-format"])
+    tokens = vartok.extract_tokens("Hello {username} %(age)d {username}")
+    assert isinstance(tokens, frozenset)
+    assert tokens == frozenset(["{username}", "%(age)d"])
+
+
+def test_extract_tokens_not_unique():
+    vartok = VariableTokenizer(["python-format", "python-brace-format"])
+    tokens = vartok.extract_tokens("Hello {username} %(age)d {username}", unique=False)
+    assert isinstance(tokens, tuple)
+    assert tokens == ("{username}", "%(age)d", "{username}")
+
+
+def test_extract_tokens_caching():
+    vartok = VariableTokenizer(["python-format", "python-brace-format"])
+    text = "Hello {username} %(age)d"
+    tokens1 = vartok.extract_tokens(text)
+    tokens2 = vartok.extract_tokens(text)
+    assert tokens1 is tokens2
+
