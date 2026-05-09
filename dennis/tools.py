@@ -1,3 +1,4 @@
+from functools import lru_cache
 import re
 
 import click
@@ -9,6 +10,7 @@ class Format:
     name = ""
     desc = ""
     regexp = ""
+    compiled_regexp = None
 
     identifier = None
 
@@ -27,6 +29,7 @@ class PythonBraceFormat(Format):
         # {}, {0}, {foo}, {foo:bar}, {foo:bar baz}
         r"(?:\{[^\}]*?\})"
     )
+    compiled_regexp = re.compile(regexp)
 
     identifier = re.compile(r"\{([^!:\}]*)")
 
@@ -50,6 +53,7 @@ class PythonFormat(Format):
         # aren't getting used in gettext contexts anyhow.
         r"(?:%(?:[(]\S+?[)])?[#0+-]?[\.\d\*]*[hlL]?[diouxefGgcrs])"
     )
+    compiled_regexp = re.compile(regexp)
 
     identifier = re.compile(
         r"%" r"(?:" + r"\((\S+?)\)" + r")?" r"[#0+-]?[\.\d\*]*[hlL]?[diouxefGgcrs]"
@@ -131,18 +135,21 @@ class VariableTokenizer:
             return [text]
         return [token for token in self.vars_re.split(text) if token]
 
+    @lru_cache(maxsize=8192)
+    def _extract_tokens(self, text, unique):
+        if not self.vars_re:
+            return frozenset() if unique else tuple()
+
+        tokens = self.vars_re.findall(text)
+        return frozenset(tokens) if unique else tuple(tokens)
+
     def extract_tokens(self, text, unique=True):
         """Returns the set of variable in the text"""
-        if not self.vars_re:
-            return set()
-
         try:
-            tokens = self.vars_re.findall(text)
-            if unique:
-                tokens = set(tokens)
-            return tokens
+            return self._extract_tokens(text, unique)
         except TypeError:
             click.echo("TYPEERROR: {}".format(repr(text)))
+            return frozenset() if unique else tuple()
 
     def is_token(self, text):
         """Is this text a variable?"""
@@ -152,7 +159,7 @@ class VariableTokenizer:
 
     def extract_variable_name(self, text):
         for fmt in self.formats:
-            if re.match(fmt.regexp, text):
+            if fmt.compiled_regexp.match(text):
                 return fmt.extract_variable_name(text)
 
 
